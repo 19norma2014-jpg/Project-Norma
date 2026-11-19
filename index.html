@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToonForge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <section id="auth-screen" class="auth-screen">
+      <div class="auth-art">
+        <div class="brand"><span class="brand-mark">T</span> ToonForge</div>
+        <div class="hero-copy">
+          <p class="eyebrow">CREATE WITHOUT LIMITS</p>
+          <h1>Bring your wildest ideas to life.</h1>
+          <p>Design comics, puppeteer characters, and make every frame unmistakably yours.</p>
+        </div>
+        <div class="floating-card card-a"><span class="mini-face">●ᴗ●</span><span>“WOW!”</span></div>
+        <div class="floating-card card-b"><span class="burst">✦</span><strong>New frame</strong></div>
+        <div class="art-doodle doodle-one">~</div>
+        <div class="art-doodle doodle-two">✦</div>
+      </div>
+      <div class="auth-panel">
+        <form id="auth-form" class="auth-form">
+          <div class="auth-heading">
+            <p id="auth-kicker">WELCOME BACK</p>
+            <h2 id="auth-title">Log in to your studio</h2>
+          </div>
+          <label>Username
+            <input id="username" type="text" placeholder="Enter your username" autocomplete="username" required>
+          </label>
+          <label>Password
+            <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+          </label>
+          <button class="primary-button" type="submit" id="auth-submit">Log in <span>→</span></button>
+          <p class="auth-switch">New to ToonForge? <button type="button" id="auth-toggle">Create an account</button></p>
+        </form>
+      </div>
+    </section>
+
+    <main id="dashboard" class="dashboard hidden">
+      <aside class="sidebar">
+        <div class="brand dashboard-brand"><span class="brand-mark">T</span> ToonForge</div>
+        <nav>
+          <button class="nav-item active" data-view="projects"><span>⌂</span> Home</button>
+          <button class="nav-item" data-view="gallery"><span>▦</span> My Gallery</button>
+          <button class="nav-item" data-view="favorites"><span>☆</span> Favorites</button>
+        </nav>
+        <button id="logout-button" class="logout-button">⏻ <span>Log out</span></button>
+      </aside>
+
+      <section class="workspace">
+        <header class="dashboard-header">
+          <div>
+            <p class="today" id="today-label"></p>
+            <h1>Welcome, <span id="welcome-name">Creator</span>! <span class="wave">👋</span></h1>
+          </div>
+          <button class="avatar" id="avatar-button" aria-label="Account">C</button>
+        </header>
+
+        <section id="projects-view" class="projects-view">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow purple">YOUR STUDIO</p>
+              <h2>Recent projects</h2>
+            </div>
+            <button class="new-project-button" id="new-project-button"><span>＋</span> New project</button>
+          </div>
+          <div id="project-grid" class="project-grid"></div>
+        </section>
+
+        <section id="empty-gallery" class="empty-gallery hidden">
+          <div class="empty-icon">✦</div>
+          <h2>Your next masterpiece starts here</h2>
+          <p>Create a comic or animation project to fill this space.</p>
+        </section>
+      </section>
+    </main>
+
+    <div id="project-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
+      <div class="modal-card">
+        <button class="modal-close" data-close-modal aria-label="Close">×</button>
+        <p class="eyebrow purple">START CREATING</p>
+        <h2 id="project-modal-title">What will you make?</h2>
+        <div class="project-options">
+          <button class="project-option comic-option" data-project-type="comic">
+            <span class="option-art">
+              <span class="comic-bubble">POW!</span>
+              <span class="comic-person">●︵●</span>
+            </span>
+            <span><strong>Comic</strong><small>Build panels and tell a story</small></span>
+            <b>→</b>
+          </button>
+          <button class="project-option animation-option" data-project-type="animation">
+            <span class="option-art">
+              <span class="jumping-stick">🧍</span>
+              <span class="motion-line">〰</span>
+            </span>
+            <span><strong>Animation</strong><small>Puppeteer characters and scenes</small></span>
+            <b>→</b>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <section id="editor" class="editor hidden">
+      <header class="editor-header">
+        <button id="back-to-dashboard" class="icon-button" aria-label="Back">←</button>
+        <div class="editor-title">
+          <span id="editor-project-icon" class="project-icon comic-icon">▤</span>
+          <input id="project-name" value="Untitled project" aria-label="Project name">
+          <span id="saved-status">Saved</span>
+        </div>
+        <div class="editor-actions">
+          <button id="undo-button" class="icon-button" title="Undo">↶</button>
+          <button id="redo-button" class="icon-button" title="Redo">↷</button>
+          <button id="save-project" class="save-button">Save project</button>
+        </div>
+      </header>
+      <div class="editor-body">
+        <aside class="tool-rail">
+          <button class="tool active" data-tool="select" title="Select">↖</button>
+          <button class="tool" data-tool="pen" title="Pen">✎</button>
+          <button class="tool" data-tool="brush" title="Brush">◆</button>
+          <button class="tool" data-tool="eraser" title="Eraser">⌫</button>
+          <button class="tool" data-tool="text" title="Text">T</button>
+          <button class="tool" data-tool="shape" title="Shape">□</button>
+          <div class="rail-divider"></div>
+          <input id="color-picker" type="color" value="#5b43d6" title="Color">
+        </aside>
+
+        <aside class="asset-panel">
+          <h3 id="asset-title">Characters</h3>
+          <div class="asset-tabs">
+            <button class="active">Presets</button>
+            <button>Uploads</button>
+          </div>
+          <div id="preset-grid" class="preset-grid"></div>
+        </aside>
+
+        <main class="canvas-area">
+          <div class="canvas-controls">
+            <button title="Zoom out">−</button>
+            <span>75%</span>
+            <button title="Zoom in">＋</button>
+          </div>
+          <div id="stage" class="stage">
+            <canvas id="drawing-canvas"></canvas>
+            <svg id="puppet" class="puppet" viewBox="0 0 380 440" aria-label="Editable puppet">
+              <g id="puppet-art">
+                <circle cx="190" cy="90" r="48" fill="#ffd7b5" stroke="#25212f" stroke-width="6"/>
+                <path d="M148 72 Q190 25 232 72 Q228 44 190 38 Q154 44 148 72" fill="#5b43d6" stroke="#25212f" stroke-width="6"/>
+                <circle cx="174" cy="88" r="5" fill="#25212f"/>
+                <circle cx="206" cy="88" r="5" fill="#25212f"/>
+                <path d="M176 112 Q190 124 204 112" fill="none" stroke="#25212f" stroke-width="5" stroke-linecap="round"/>
+                <path d="M190 138 L190 260" stroke="#25212f" stroke-width="16" stroke-linecap="round"/>
+                <path d="M190 155 L110 215" stroke="#25212f" stroke-width="18" stroke-linecap="round" class="limb" data-limb="left-arm"/>
+                <path d="M190 155 L270 215" stroke="#25212f" stroke-width="18" stroke-linecap="round" class="limb" data-limb="right-arm"/>
+                <circle cx="190" cy="155" r="18" fill="#ffcc47" stroke="#25212f" stroke-width="6"/>
+                <path d="M190 260 L130 350" stroke="#25212f" stroke-width="20" stroke-linecap="round" class="limb" data-limb="left-leg"/>
+                <path d="M190 260 L250 350" stroke="#25212f" stroke-width="20" stroke-linecap="round" class="limb" data-limb="right-leg"/>
+              </g>
+            </svg>
+          </div>
+        </main>
+
+        <aside class="layers-panel">
+          <div class="panel-heading"><h3>Layers</h3><button id="add-layer">＋</button></div>
+          <div id="layer-list" class="layer-list">
+            <button class="layer active"><span class="layer-thumb puppet-thumb">●</span><span>Puppet</span><b>◉</b></button>
+            <button class="layer"><span class="layer-thumb background-thumb">▧</span><span>Background</span><b>◉</b></button>
+          </div>
+          <div class="properties">
+            <h3>Properties</h3>
+            <label>Opacity <input type="range" value="100"></label>
+            <div class="property-row"><span>Size</span><input type="number" value="100"><b>%</b></div>
+          </div>
+        </aside>
+      </div>
+      <footer class="timeline">
+        <div class="timeline-controls">
+          <button id="play-animation">▶</button>
+          <button>|◀</button>
+          <button>■</button>
+        </div>
+        <div class="frame-strip" id="frame-strip">
+          <button class="frame active"><span>1</span><i></i></button>
+          <button class="add-frame" id="add-frame">＋</button>
+        </div>
+      </footer>
+    </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
