@@ -143,8 +143,9 @@
             <button title="Zoom in">＋</button>
           </div>
           <div id="stage" class="stage">
-            <canvas id="drawing-canvas"></canvas>
-            <svg id="puppet" class="puppet" viewBox="0 0 380 440" aria-label="Editable puppet">
+            <div id="stage-layers"></div>
+            <template id="puppet-template">
+              <svg id="puppet" class="puppet" viewBox="0 0 380 440" aria-label="Editable puppet">
               <g id="puppet-art">
                 <circle cx="190" cy="90" r="48" fill="#ffd7b5" stroke="#25212f" stroke-width="6"/>
                 <path d="M148 72 Q190 25 232 72 Q228 44 190 38 Q154 44 148 72" fill="#5b43d6" stroke="#25212f" stroke-width="6"/>
@@ -158,20 +159,21 @@
                 <path d="M190 260 L130 350" stroke="#25212f" stroke-width="20" stroke-linecap="round" class="limb" data-limb="left-leg"/>
                 <path d="M190 260 L250 350" stroke="#25212f" stroke-width="20" stroke-linecap="round" class="limb" data-limb="right-leg"/>
               </g>
-            </svg>
+              </svg>
+            </template>
           </div>
         </main>
 
         <aside class="layers-panel">
-          <div class="panel-heading"><h3>Layers</h3><button id="add-layer">＋</button></div>
-          <div id="layer-list" class="layer-list">
-            <button class="layer active"><span class="layer-thumb puppet-thumb">●</span><span>Puppet</span><b>◉</b></button>
-            <button class="layer"><span class="layer-thumb background-thumb">▧</span><span>Background</span><b>◉</b></button>
-          </div>
+          <div class="panel-heading"><h3>Layers</h3><button id="add-layer" title="Add layer">＋</button></div>
+          <p class="layer-hint">Top layers appear in front. Drag to reorder.</p>
+          <div id="layer-list" class="layer-list" role="listbox" aria-label="Layer stack"></div>
           <div class="properties">
             <h3>Properties</h3>
-            <label>Opacity <input type="range" value="100"></label>
-            <div class="property-row"><span>Size</span><input type="number" value="100"><b>%</b></div>
+            <label for="layer-opacity">Opacity <output id="layer-opacity-value">100%</output></label>
+            <input id="layer-opacity" type="range" min="0" max="100" value="100">
+            <label class="size-label" for="layer-size">Size <output id="layer-size-value">100%</output></label>
+            <input id="layer-size" type="range" min="10" max="200" step="5" value="100">
           </div>
         </aside>
       </div>

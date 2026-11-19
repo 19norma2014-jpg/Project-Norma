@@ -142,25 +142,34 @@ button { cursor: pointer; }
 .canvas-controls button { border: 0; background: transparent; height: 34px; width: 28px; }
 .canvas-controls span { font-size: 12px; }
 .stage { position: relative; width: 520px; height: 460px; max-width: calc(100% - 50px); max-height: calc(100% - 60px); background: #fff; border: 1px solid #dedbe7; box-shadow: 0 12px 32px rgba(55,48,82,.10); }
-#drawing-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; touch-action: none; }
-.stage[data-tool="pen"] #drawing-canvas,
-.stage[data-tool="brush"] #drawing-canvas,
-.stage[data-tool="eraser"] #drawing-canvas { z-index: 4; }
-.puppet { position: absolute; left: 50%; bottom: 0; z-index: 3; width: 54%; height: 82%; transform: translateX(-50%); overflow: visible; pointer-events: none; touch-action: none; }
-.stage[data-tool="select"] .puppet { pointer-events: auto; }
+#stage-layers { position: absolute; inset: 0; }
+.stage-layer { position: absolute; inset: 0; transform-origin: center; pointer-events: none; }
+.layer-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; pointer-events: none; touch-action: none; }
+.stage[data-tool="pen"] .stage-layer[data-selected="true"] .layer-canvas,
+.stage[data-tool="brush"] .stage-layer[data-selected="true"] .layer-canvas,
+.stage[data-tool="eraser"] .stage-layer[data-selected="true"] .layer-canvas { pointer-events: auto; }
+.puppet { position: absolute; left: 50%; bottom: 0; width: 54%; height: 82%; transform: translateX(-50%); overflow: visible; pointer-events: none; touch-action: none; }
+.stage[data-tool="select"] .puppet-layer[data-selected="true"] .puppet { pointer-events: auto; }
 .limb { cursor: grab; }
 .limb:active { cursor: grabbing; }
 .layers-panel { background: #fff; border-left: 1px solid var(--line); padding: 16px 12px; }
 .panel-heading { display: flex; justify-content: space-between; }
 .panel-heading button { width: 28px; height: 28px; border: 0; border-radius: 6px; background: var(--lavender); color: var(--purple); }
+.layer-hint { margin: -4px 0 10px; color: #9a96a5; font-size: 10px; line-height: 1.4; }
 .layer-list { display: grid; gap: 5px; }
-.layer { height: 48px; border: 0; border-radius: 8px; background: transparent; display: grid; grid-template-columns: 38px 1fr 20px; align-items: center; text-align: left; font-size: 12px; }
+.layer { min-width: 0; height: 48px; border: 0; border-radius: 8px; background: transparent; display: grid; grid-template-columns: 38px minmax(0, 1fr) 28px; align-items: center; text-align: left; font-size: 12px; cursor: grab; }
+.layer:active { cursor: grabbing; }
 .layer.active { background: var(--lavender); }
-.layer b { color: #aaa5b5; }
+.layer.drag-over { outline: 1px dashed var(--purple); }
+.layer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer-visibility { width: 28px; height: 30px; border: 0; background: transparent; color: #777184; }
 .layer-thumb { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 6px; background: white; }
 .puppet-thumb { color: var(--purple); }
 .properties { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 14px; }
-.properties label { display: grid; grid-template-columns: 55px 1fr; align-items: center; color: #777184; font-size: 12px; }
+.properties label { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 4px; color: #777184; font-size: 12px; }
+.properties output { color: var(--ink); font-variant-numeric: tabular-nums; }
+.properties input[type="range"] { display: block; width: 100%; margin: 0; accent-color: var(--purple); }
+.properties .size-label { margin-top: 14px; }
 .property-row { display: grid; grid-template-columns: 55px 70px 20px; align-items: center; margin-top: 12px; color: #777184; font-size: 12px; }
 .property-row input { height: 32px; border: 1px solid var(--line); border-radius: 6px; width: 64px; padding: 4px; }
 .timeline { display: grid; grid-template-columns: 150px 1fr; align-items: center; background: white; border-top: 1px solid var(--line); padding: 10px 14px; }
