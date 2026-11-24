@@ -54,6 +54,7 @@
       </aside>
 
       <section class="workspace">
+        <div class="home-ambient" aria-hidden="true"><span></span><span></span><span></span></div>
         <header class="dashboard-header">
           <div>
             <p class="today" id="today-label"></p>
@@ -72,7 +73,10 @@
           </div>
           <div id="project-grid" class="project-grid"></div>
         </section>
-
+        <div class="home-audio-controls" id="home-audio-controls" aria-label="Sound settings">
+          <button type="button" id="sound-effects-toggle" aria-pressed="true">🔊 Sounds on</button>
+          <button type="button" id="music-toggle" aria-pressed="false">♫ Music off</button>
+        </div>
       </section>
     </main>
 
@@ -174,6 +178,13 @@
             <input id="layer-opacity" type="range" min="0" max="100" value="100">
             <label class="size-label" for="layer-size">Size <output id="layer-size-value">100%</output></label>
             <input id="layer-size" type="range" min="10" max="200" step="5" value="100">
+          </div>
+          <div class="properties object-properties hidden" id="object-properties">
+            <h3>Selected object</h3>
+            <label for="object-size">Size <output id="object-size-value">100%</output></label>
+            <input id="object-size" type="range" min="25" max="300" step="5" value="100">
+            <label class="size-label" for="object-rotation">Rotation <output id="object-rotation-value">0°</output></label>
+            <input id="object-rotation" type="range" min="-180" max="180" value="0">
           </div>
         </aside>
       </div>

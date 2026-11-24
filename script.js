@@ -120,6 +120,7 @@ const editor = $("#editor");
 let currentProject = null;
 let selectedFrameIndex = 0;
 let selectedLayerId = null;
+let selectedObjectId = null;
 let playbackTimer = null;
 let createdLayerCount = 0;
 
@@ -153,29 +154,31 @@ function openEditor(project) {
 function renderPresets(type) {
   const presets = type === "comic"
     ? [
-        { icon: "●︵●", label: "Character" },
-        { icon: "◕‿◕", label: "Happy character" },
-        { icon: "💬", label: "Speech bubble" },
-        { icon: "✦", label: "Sparkle" },
-        { icon: "★", label: "Star" },
-        { icon: "☁", label: "Cloud" }
+        { icon: "●︵●", label: "Neutral face", expression: "neutral" },
+        { icon: "◕‿◕", label: "Happy face", expression: "happy" },
+        { icon: "💬", label: "Speech bubble", kind: "object" },
+        { icon: "✦", label: "Sparkle", kind: "object" },
+        { icon: "★", label: "Star", kind: "object" },
+        { icon: "☁", label: "Cloud", kind: "object" }
       ]
     : [
         { icon: "😊", label: "Happy", expression: "happy" },
         { icon: "😮", label: "Surprised", expression: "surprised" },
         { icon: "😢", label: "Sad", expression: "sad" },
-        { icon: "😠", label: "Angry", expression: "angry" }
+        { icon: "😠", label: "Angry", expression: "angry" },
+        { icon: "💬", label: "Speech bubble", kind: "object" },
+        { icon: "⚡", label: "Lightning", kind: "object" }
       ];
   $("#preset-grid").innerHTML = presets.map((preset, index) =>
     `<button class="preset" type="button" title="${preset.label}" aria-label="${preset.label}" data-preset-index="${index}" data-expression="${preset.expression || ""}">${preset.icon}</button>`
   ).join("");
   $$(".preset", $("#preset-grid")).forEach((button, index) => {
     button.addEventListener("click", () => {
-      if (type === "animation") {
+      if (presets[index].expression) {
         applyExpression(presets[index].expression);
         saveCurrentFrame();
       } else {
-        addCanvasStamp(presets[index].icon);
+        addStageObject(presets[index].icon, presets[index].label);
       }
     });
   });
@@ -241,6 +244,10 @@ function ensureProjectLayers(project) {
     if (!frame.layerDrawings) {
       frame.layerDrawings = {};
       if (frame.drawing) frame.layerDrawings.drawing = frame.drawing;
+      changed = true;
+    }
+    if (!Array.isArray(frame.objects)) {
+      frame.objects = [];
       changed = true;
     }
   });
@@ -441,7 +448,7 @@ function setActiveTool(toolName) {
 $$(".tool").forEach(tool => tool.addEventListener("click", () => setActiveTool(tool.dataset.tool)));
 
 function defaultFrame() {
-  return { pose: { ...defaultPose }, expression: "happy", layerDrawings: {} };
+  return { pose: { ...defaultPose }, expression: "happy", layerDrawings: {}, objects: [] };
 }
 
 function captureFrame() {
@@ -451,10 +458,12 @@ function captureFrame() {
   layerCanvases.forEach((canvas, layerId) => {
     layerDrawings[layerId] = canvas.toDataURL();
   });
+  const objects = currentProject?.frames?.[selectedFrameIndex]?.objects || [];
   return {
     pose,
     expression: $("#puppet").dataset.expression || "happy",
-    layerDrawings
+    layerDrawings,
+    objects: JSON.parse(JSON.stringify(objects))
   };
 }
 
@@ -472,6 +481,7 @@ function applyPose(pose = {}) {
 }
 
 const expressions = {
+  neutral: { eyeRadius: 5, mouth: "M176 112 Q190 112 204 112", mouthWidth: 5 },
   happy: { eyeRadius: 5, mouth: "M176 108 Q190 130 204 108", mouthWidth: 5 },
   surprised: { eyeRadius: 7, mouth: "M184 111 Q190 111 196 111", mouthWidth: 9 },
   sad: { eyeRadius: 5, mouth: "M176 120 Q190 104 204 120", mouthWidth: 5 },
@@ -515,13 +525,16 @@ function loadFrame(index, saveCurrent = true) {
   if (!currentProject?.frames?.[index]) return;
   if (saveCurrent) saveCurrentFrame();
   selectedFrameIndex = index;
+  selectedObjectId = null;
   undoStack = [];
   redoStack = [];
   const frame = currentProject.frames[index];
   applyPose(frame.pose);
   applyExpression(frame.expression);
   restoreFrameDrawings(frame.layerDrawings || { drawing: frame.drawing });
+  renderFrameObjects(frame.objects || []);
   renderFrames();
+  updateObjectProperties();
 }
 
 function selectFrame(index) {
@@ -529,24 +542,130 @@ function selectFrame(index) {
   loadFrame(index);
 }
 
-function getActiveDrawingCanvas() {
-  return layerCanvases.get(selectedLayerId) || layerCanvases.values().next().value || null;
+function getCurrentFrameObjects() {
+  const frame = currentProject?.frames?.[selectedFrameIndex];
+  if (!frame) return [];
+  frame.objects ||= [];
+  return frame.objects;
 }
 
-function addCanvasStamp(symbol) {
-  const canvas = getActiveDrawingCanvas();
-  if (!canvas || !canvas.width || !canvas.height) return;
-  const context = canvas.getContext("2d");
-  undoStack.push(canvas.toDataURL());
-  redoStack = [];
-  context.save();
-  context.globalCompositeOperation = "source-over";
-  context.font = "42px sans-serif";
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.fillText(symbol, canvas.width / 2, canvas.height / 2);
-  context.restore();
+function getSelectedObject() {
+  return getCurrentFrameObjects().find(object => object.id === selectedObjectId) || null;
+}
+
+function applyStageObjectStyle(element, object) {
+  element.style.setProperty("--object-x", `${object.x}%`);
+  element.style.setProperty("--object-y", `${object.y}%`);
+  element.style.setProperty("--object-size", String(object.size / 100));
+  element.style.setProperty("--object-rotation", `${object.rotation}deg`);
+}
+
+function updateObjectProperties() {
+  const object = getSelectedObject();
+  $("#object-properties").classList.toggle("hidden", !object);
+  if (!object) return;
+  $("#object-size").value = object.size;
+  $("#object-size-value").value = `${object.size}%`;
+  $("#object-rotation").value = object.rotation;
+  $("#object-rotation-value").value = `${object.rotation}°`;
+}
+
+function selectObject(objectId) {
+  selectedObjectId = objectId;
+  $$(".stage-object").forEach(element => {
+    element.classList.toggle("selected", element.dataset.objectId === objectId);
+  });
+  updateObjectProperties();
+}
+
+function renderFrameObjects(objects) {
+  $$(".stage-object", $("#stage-layers")).forEach(element => element.remove());
+  objects.forEach(object => {
+    let layer = currentProject.layers.find(item => item.id === object.layerId && item.type !== "puppet");
+    if (!layer) layer = currentProject.layers.find(item => item.type !== "puppet");
+    if (!layer) return;
+    object.layerId = layer.id;
+    const wrapper = $(`.stage-layer[data-layer-id="${layer.id}"]`);
+    if (!wrapper) return;
+    const element = document.createElement("button");
+    element.type = "button";
+    element.className = `stage-object${object.id === selectedObjectId ? " selected" : ""}`;
+    element.dataset.objectId = object.id;
+    element.setAttribute("aria-label", `Move ${object.label || object.symbol}`);
+    element.textContent = object.symbol;
+    applyStageObjectStyle(element, object);
+    wrapper.appendChild(element);
+    element.addEventListener("pointerdown", event => {
+      if (activeTool !== "select") return;
+      event.preventDefault();
+      event.stopPropagation();
+      const objectLayer = currentProject.layers.find(item => item.id === object.layerId);
+      if (objectLayer && selectedLayerId !== objectLayer.id) selectLayer(objectLayer.id);
+      selectObject(object.id);
+      element.setPointerCapture(event.pointerId);
+    });
+    element.addEventListener("pointermove", event => {
+      if (!element.hasPointerCapture(event.pointerId)) return;
+      const bounds = wrapper.getBoundingClientRect();
+      object.x = Math.max(0, Math.min(100, (event.clientX - bounds.left) / bounds.width * 100));
+      object.y = Math.max(0, Math.min(100, (event.clientY - bounds.top) / bounds.height * 100));
+      applyStageObjectStyle(element, object);
+    });
+    element.addEventListener("pointerup", () => saveCurrentFrame());
+    element.addEventListener("pointercancel", () => saveCurrentFrame());
+  });
+}
+
+function addStageObject(symbol, label = symbol) {
+  if (!currentProject) return;
+  let layer = currentProject.layers.find(item => item.id === selectedLayerId && item.type !== "puppet" && item.visible);
+  if (!layer) layer = currentProject.layers.find(item => item.type !== "puppet" && item.visible);
+  if (!layer) return;
+  setActiveTool("select");
+  if (selectedLayerId !== layer.id) selectLayer(layer.id);
+  const object = {
+    id: `object-${Date.now()}-${++createdObjectCount}`,
+    symbol,
+    label,
+    layerId: layer.id,
+    x: symbol === "💬" ? 72 : 50,
+    y: symbol === "💬" ? 24 : 50,
+    size: 100,
+    rotation: 0
+  };
+  getCurrentFrameObjects().push(object);
+  selectedObjectId = object.id;
+  renderFrameObjects(getCurrentFrameObjects());
+  updateObjectProperties();
   saveCurrentFrame();
+}
+
+$("#object-size").addEventListener("input", event => {
+  const object = getSelectedObject();
+  if (!object) return;
+  object.size = Number(event.target.value);
+  const element = $(`.stage-object[data-object-id="${object.id}"]`);
+  if (element) applyStageObjectStyle(element, object);
+  $("#object-size-value").value = `${object.size}%`;
+  saveCurrentFrame();
+});
+
+$("#object-rotation").addEventListener("input", event => {
+  const object = getSelectedObject();
+  if (!object) return;
+  object.rotation = Number(event.target.value);
+  const element = $(`.stage-object[data-object-id="${object.id}"]`);
+  if (element) applyStageObjectStyle(element, object);
+  $("#object-rotation-value").value = `${object.rotation}°`;
+  saveCurrentFrame();
+});
+
+$("#stage").addEventListener("pointerdown", event => {
+  if (event.target === $("#stage-layers") || event.target === $("#stage")) selectObject(null);
+});
+
+function getActiveDrawingCanvas() {
+  return layerCanvases.get(selectedLayerId) || layerCanvases.values().next().value || null;
 }
 
 function resizeCanvas(preserve = true) {
@@ -725,5 +844,97 @@ window.addEventListener("resize", () => {
   if (!editor.classList.contains("hidden")) resizeCanvas();
 });
 
+const audioPreferences = JSON.parse(localStorage.getItem("toonforge-audio") || '{"effects":true,"music":false}');
+let soundEffectsEnabled = audioPreferences.effects !== false;
+let musicEnabled = audioPreferences.music === true;
+let audioContext = null;
+let musicTimer = null;
+let musicNoteIndex = 0;
+
+function getAudioContext() {
+  const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextConstructor) return null;
+  if (!audioContext) audioContext = new AudioContextConstructor();
+  if (audioContext.state === "suspended") audioContext.resume();
+  return audioContext;
+}
+
+function playTone(frequency, duration = 0.12, volume = 0.025, waveform = "sine") {
+  const audio = getAudioContext();
+  if (!audio) return;
+  const oscillator = audio.createOscillator();
+  const gain = audio.createGain();
+  const start = audio.currentTime;
+  oscillator.type = waveform;
+  oscillator.frequency.setValueAtTime(frequency, start);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  oscillator.connect(gain);
+  gain.connect(audio.destination);
+  oscillator.start(start);
+  oscillator.stop(start + duration);
+}
+
+function playButtonSound(button) {
+  const label = button.dataset.sound || button.id || button.getAttribute("aria-label") || button.textContent.trim();
+  let hash = 0;
+  for (const character of label) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  playTone(260 + hash % 420, 0.09, 0.02, hash % 2 ? "triangle" : "sine");
+}
+
+const musicNotes = [261.63, 329.63, 392, 329.63, 293.66, 349.23, 440, 349.23];
+function startMusic() {
+  if (!musicEnabled || musicTimer) return;
+  getAudioContext();
+  musicTimer = setInterval(() => {
+    playTone(musicNotes[musicNoteIndex % musicNotes.length], 0.34, 0.008, "sine");
+    musicNoteIndex++;
+  }, 420);
+}
+
+function stopMusic() {
+  if (musicTimer) clearInterval(musicTimer);
+  musicTimer = null;
+}
+
+function saveAudioPreferences() {
+  localStorage.setItem("toonforge-audio", JSON.stringify({
+    effects: soundEffectsEnabled,
+    music: musicEnabled
+  }));
+}
+
+function updateAudioControls() {
+  const effectsButton = $("#sound-effects-toggle");
+  const musicButton = $("#music-toggle");
+  effectsButton.textContent = soundEffectsEnabled ? "🔊 Sounds on" : "🔇 Sounds off";
+  effectsButton.setAttribute("aria-pressed", String(soundEffectsEnabled));
+  musicButton.textContent = musicEnabled ? "♫ Music on" : "♫ Music off";
+  musicButton.setAttribute("aria-pressed", String(musicEnabled));
+}
+
+$("#sound-effects-toggle").addEventListener("click", () => {
+  soundEffectsEnabled = !soundEffectsEnabled;
+  saveAudioPreferences();
+  updateAudioControls();
+});
+
+$("#music-toggle").addEventListener("click", () => {
+  musicEnabled = !musicEnabled;
+  saveAudioPreferences();
+  updateAudioControls();
+  if (musicEnabled) startMusic();
+  else stopMusic();
+});
+
+document.addEventListener("click", event => {
+  const button = event.target.closest("button");
+  if (!button || button.disabled) return;
+  if (soundEffectsEnabled) playButtonSound(button);
+  if (musicEnabled && !musicTimer) startMusic();
+});
+
+updateAudioControls();
 const rememberedUser = localStorage.getItem("toonforge-user");
 if (rememberedUser) setAuthenticated(rememberedUser);
