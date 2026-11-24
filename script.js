@@ -581,8 +581,8 @@ function selectObject(objectId) {
 function renderFrameObjects(objects) {
   $$(".stage-object", $("#stage-layers")).forEach(element => element.remove());
   objects.forEach(object => {
-    let layer = currentProject.layers.find(item => item.id === object.layerId && item.type !== "puppet");
-    if (!layer) layer = currentProject.layers.find(item => item.type !== "puppet");
+    let layer = currentProject.layers.find(item => item.id === object.layerId);
+    if (!layer) layer = currentProject.layers.find(item => item.visible);
     if (!layer) return;
     object.layerId = layer.id;
     const wrapper = $(`.stage-layer[data-layer-id="${layer.id}"]`);
@@ -618,8 +618,8 @@ function renderFrameObjects(objects) {
 
 function addStageObject(symbol, label = symbol) {
   if (!currentProject) return;
-  let layer = currentProject.layers.find(item => item.id === selectedLayerId && item.type !== "puppet" && item.visible);
-  if (!layer) layer = currentProject.layers.find(item => item.type !== "puppet" && item.visible);
+  let layer = currentProject.layers.find(item => item.id === selectedLayerId && item.visible);
+  if (!layer) layer = currentProject.layers.find(item => item.visible);
   if (!layer) return;
   setActiveTool("select");
   if (selectedLayerId !== layer.id) selectLayer(layer.id);
