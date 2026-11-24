@@ -123,6 +123,7 @@ let selectedLayerId = null;
 let selectedObjectId = null;
 let playbackTimer = null;
 let createdLayerCount = 0;
+let createdObjectCount = 0;
 
 function openEditor(project) {
   stopPlayback();
