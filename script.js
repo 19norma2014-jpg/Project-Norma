@@ -1,6 +1,16 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
+function readStoredJson(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch (error) {
+    console.warn(`Ignoring invalid stored value for ${key}.`);
+    return fallback;
+  }
+}
+
 const authScreen = $("#auth-screen");
 const dashboard = $("#dashboard");
 const authForm = $("#auth-form");
@@ -47,7 +57,8 @@ $("#logout-button").addEventListener("click", () => {
 const today = new Date();
 $("#today-label").textContent = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
-let projects = JSON.parse(localStorage.getItem("toonforge-projects") || "[]");
+let projects = readStoredJson("toonforge-projects", []);
+if (!Array.isArray(projects)) projects = [];
 
 function persistProjects() {
   localStorage.setItem("toonforge-projects", JSON.stringify(projects));
@@ -845,7 +856,7 @@ window.addEventListener("resize", () => {
   if (!editor.classList.contains("hidden")) resizeCanvas();
 });
 
-const audioPreferences = JSON.parse(localStorage.getItem("toonforge-audio") || '{"effects":true,"music":false}');
+const audioPreferences = readStoredJson("toonforge-audio", { effects: true, music: false });
 let soundEffectsEnabled = audioPreferences.effects !== false;
 let musicEnabled = audioPreferences.music === true;
 let audioContext = null;
